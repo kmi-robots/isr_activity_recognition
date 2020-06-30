@@ -5,18 +5,27 @@
 #include <cstring>
 #include <string>
 #include <fstream>
+#include <astra_body_tracker/BodyListStamped.h>
 using namespace std;
+
+int body_id = -1;
+
+void idCallback(const astra_body_tracker::BodyListStamped::ConstPtr& msg) {
+    body_id = msg->ids[0];
+}
 
 int main(int argc, char** argv){
   ros::init(argc, argv, "tf_listener");
 
-  string MAIN_FRAME_camera = "openni_depth_frame";
+//  string MAIN_FRAME_camera = "openni_depth_frame";
+  string MAIN_FRAME_camera = "world";
   string MAIN_FRAME = "torso_1";
   string FRAMES[] = {"head_", "neck_", "torso_", "left_shoulder_", "right_shoulder_", 
 		"left_hand_", "right_hand_", "left_elbow_", "right_elbow_", "left_hip_",
 	 	"right_hip_", "left_knee_", "right_knee_", "left_foot_", "right_foot_"};
 
   ros::NodeHandle node;
+  ros::Subscriber sub = node.subscribe("body_list", 1, idCallback);
 
   tf::TransformListener listener;
     
@@ -34,10 +43,16 @@ int main(int argc, char** argv){
   while (node.ok()){
   int contador = 0;    
 
-    while(listener.frameExists("torso_1")==0 && listener.frameExists("torso_2")==0 && listener.frameExists("torso_3")==0 && listener.frameExists("torso_4")==0 && listener.frameExists("torso_5")==0 && listener.frameExists("torso_6")==0 && listener.frameExists("torso_7")==0){
-      ros::Duration(0.1).sleep();
-      ROS_INFO("Waiting..."); 
+//    while(listener.frameExists("torso_1")==0 && listener.frameExists("torso_2")==0 && listener.frameExists("torso_3")==0 && listener.frameExists("torso_4")==0 && listener.frameExists("torso_5")==0 && listener.frameExists("torso_6")==0 && listener.frameExists("torso_7")==0){
+
+    ros::Rate loop_rate(10);
+
+    while(body_id == -1) {
+      ros::spinOnce();
+      loop_rate.sleep();
+      ROS_INFO("Waiting...");
     }
+
     myfile.open("test_torso.txt", ios::app);
     myfile2.open("test_camera.txt", ios::app);  
 
@@ -59,7 +74,8 @@ int main(int argc, char** argv){
         
       }
 
-    MAIN_FRAME = "torso_" + boost::lexical_cast<std::string>(int(last_char)-'0');
+//    MAIN_FRAME = "torso_" + boost::lexical_cast<std::string>(int(last_char)-'0');
+    MAIN_FRAME = "torso_" + std::to_string(body_id);
     cout << "MAIN_FRAME: " << MAIN_FRAME <<endl;
 
     //FRAMES[i] = FRAMES[i] + boost::lexical_cast<std::string>(contador);
@@ -86,7 +102,7 @@ int main(int argc, char** argv){
            //listener.waitForTransform("torso_1", "openni_depth_frame", ros::Time(0), timeout );
 		// head
 		// torso
-		listener.lookupTransform(MAIN_FRAME, FRAMES[0]+ boost::lexical_cast<std::string>(int(last_char)-'0'), ros::Time(0), tf_head);
+		listener.lookupTransform(MAIN_FRAME, FRAMES[0] + std::to_string(body_id), ros::Time(0), tf_head);
 		
  		double x_head = tf_head.getOrigin().x();
  		double y_head = tf_head.getOrigin().y();
@@ -97,7 +113,7 @@ int main(int argc, char** argv){
 		tf::Quaternion q_head = tf_head.getRotation();
 		
 		// camera
-		listener.lookupTransform(MAIN_FRAME_camera, FRAMES[0]+ boost::lexical_cast<std::string>(int(last_char)-'0'), ros::Time(0), tf_head);
+		listener.lookupTransform(MAIN_FRAME_camera, FRAMES[0] + std::to_string(body_id), ros::Time(0), tf_head);
 		
  		double x_head_camera = tf_head.getOrigin().x();
  		double y_head_camera = tf_head.getOrigin().y();
@@ -109,7 +125,7 @@ int main(int argc, char** argv){
 
 		//////////////////// NECK ////////////////////////// 
 		// torso
- 		listener.lookupTransform(MAIN_FRAME, FRAMES[1]+ boost::lexical_cast<std::string>(int(last_char)-'0'), ros::Time(0), tf_neck);
+ 		listener.lookupTransform(MAIN_FRAME, FRAMES[1] + std::to_string(body_id), ros::Time(0), tf_neck);
 
  		double x_neck = tf_neck.getOrigin().x();
  		double y_neck = tf_neck.getOrigin().y();
@@ -119,7 +135,7 @@ int main(int argc, char** argv){
 		tf_neck.getBasis().getRPY(roll_neck, pitch_neck, yaw_neck);
 		tf::Quaternion q_neck = tf_neck.getRotation();
 		// camera
-		listener.lookupTransform(MAIN_FRAME_camera, FRAMES[1]+ boost::lexical_cast<std::string>(int(last_char)-'0'), ros::Time(0), tf_neck);
+		listener.lookupTransform(MAIN_FRAME_camera, FRAMES[1] + std::to_string(body_id), ros::Time(0), tf_neck);
 
  		double x_neck_camera = tf_neck.getOrigin().x();
  		double y_neck_camera = tf_neck.getOrigin().y();
@@ -131,7 +147,7 @@ int main(int argc, char** argv){
 
 		////////////////// TORSO ////////////////////////////
 		// torso
- 		listener.lookupTransform(MAIN_FRAME, FRAMES[2]+ boost::lexical_cast<std::string>(int(last_char)-'0'), ros::Time(0), tf_torso);
+ 		listener.lookupTransform(MAIN_FRAME, FRAMES[2] + std::to_string(body_id), ros::Time(0), tf_torso);
 
  		double x_torso = tf_torso.getOrigin().x();
  		double y_torso = tf_torso.getOrigin().y();
@@ -142,7 +158,7 @@ int main(int argc, char** argv){
 		tf::Quaternion q_torso = tf_torso.getRotation();
 		
 		// camera
- 		listener.lookupTransform(MAIN_FRAME_camera, FRAMES[2]+ boost::lexical_cast<std::string>(int(last_char)-'0'), ros::Time(0), tf_torso);
+ 		listener.lookupTransform(MAIN_FRAME_camera, FRAMES[2] + std::to_string(body_id), ros::Time(0), tf_torso);
 
  		double x_torso_camera = tf_torso.getOrigin().x();
  		double y_torso_camera = tf_torso.getOrigin().y();
@@ -154,7 +170,7 @@ int main(int argc, char** argv){
 
  		//////////////////// left shoulder ///////////////////////
  		// torso
- 		listener.lookupTransform(MAIN_FRAME, FRAMES[3]+ boost::lexical_cast<std::string>(int(last_char)-'0'), ros::Time(0), tf_left_shoulder);
+ 		listener.lookupTransform(MAIN_FRAME, FRAMES[3] + std::to_string(body_id), ros::Time(0), tf_left_shoulder);
 
 		double x_left_shoulder = tf_left_shoulder.getOrigin().x();
 		double y_left_shoulder = tf_left_shoulder.getOrigin().y();
@@ -165,7 +181,7 @@ int main(int argc, char** argv){
 		tf::Quaternion q_left_shoulder = tf_left_shoulder.getRotation();
 		
 		// camera
- 		listener.lookupTransform(MAIN_FRAME_camera, FRAMES[3]+ boost::lexical_cast<std::string>(int(last_char)-'0'), ros::Time(0), tf_left_shoulder);
+ 		listener.lookupTransform(MAIN_FRAME_camera, FRAMES[3] + std::to_string(body_id), ros::Time(0), tf_left_shoulder);
 
 		double x_left_shoulder_camera = tf_left_shoulder.getOrigin().x();
 		double y_left_shoulder_camera = tf_left_shoulder.getOrigin().y();
@@ -177,7 +193,7 @@ int main(int argc, char** argv){
 
 		////////////////////////// right shoulder ///////////////////////////
 		// torso
-		listener.lookupTransform(MAIN_FRAME, FRAMES[4]+ boost::lexical_cast<std::string>(int(last_char)-'0'), ros::Time(0), tf_right_shoulder);
+		listener.lookupTransform(MAIN_FRAME, FRAMES[4] + std::to_string(body_id), ros::Time(0), tf_right_shoulder);
 
  		double x_right_shoulder = tf_right_shoulder.getOrigin().x();
  		double y_right_shoulder = tf_right_shoulder.getOrigin().y();
@@ -188,7 +204,7 @@ int main(int argc, char** argv){
 		tf::Quaternion q_right_shoulder = tf_right_shoulder.getRotation();
 		
 		// camera
-		listener.lookupTransform(MAIN_FRAME_camera, FRAMES[4]+ boost::lexical_cast<std::string>(int(last_char)-'0'), ros::Time(0), tf_right_shoulder);
+		listener.lookupTransform(MAIN_FRAME_camera, FRAMES[4] + std::to_string(body_id), ros::Time(0), tf_right_shoulder);
 
  		double x_right_shoulder_camera = tf_right_shoulder.getOrigin().x();
  		double y_right_shoulder_camera = tf_right_shoulder.getOrigin().y();
@@ -200,7 +216,7 @@ int main(int argc, char** argv){
 
  		/////////////////////////// left hand /////////////////////////////////
  		// torso
- 		listener.lookupTransform(MAIN_FRAME, FRAMES[5]+ boost::lexical_cast<std::string>(int(last_char)-'0'), ros::Time(0), tf_left_hand);
+ 		listener.lookupTransform(MAIN_FRAME, FRAMES[5] + std::to_string(body_id), ros::Time(0), tf_left_hand);
 
 		double x_left_hand = tf_left_hand.getOrigin().x();
 		double y_left_hand = tf_left_hand.getOrigin().y();
@@ -211,7 +227,7 @@ int main(int argc, char** argv){
 		tf::Quaternion q_left_hand = tf_left_hand.getRotation();
 		
 		// camera
- 		listener.lookupTransform(MAIN_FRAME_camera, FRAMES[5]+ boost::lexical_cast<std::string>(int(last_char)-'0'), ros::Time(0), tf_left_hand);
+ 		listener.lookupTransform(MAIN_FRAME_camera, FRAMES[5] + std::to_string(body_id), ros::Time(0), tf_left_hand);
 
 		double x_left_hand_camera = tf_left_hand.getOrigin().x();
 		double y_left_hand_camera = tf_left_hand.getOrigin().y();
@@ -223,7 +239,7 @@ int main(int argc, char** argv){
 
 		////////////////////////// right hand //////////////////////////
 		// torso
- 		listener.lookupTransform(MAIN_FRAME, FRAMES[6]+ boost::lexical_cast<std::string>(int(last_char)-'0'), ros::Time(0), tf_right_hand);
+ 		listener.lookupTransform(MAIN_FRAME, FRAMES[6] + std::to_string(body_id), ros::Time(0), tf_right_hand);
 
 		double x_right_hand = tf_right_hand.getOrigin().x();
 		double y_right_hand = tf_right_hand.getOrigin().y();
@@ -234,7 +250,7 @@ int main(int argc, char** argv){
 		tf::Quaternion q_right_hand = tf_right_hand.getRotation();
 		
 		// camera
- 		listener.lookupTransform(MAIN_FRAME_camera, FRAMES[6]+ boost::lexical_cast<std::string>(int(last_char)-'0'), ros::Time(0), tf_right_hand);
+ 		listener.lookupTransform(MAIN_FRAME_camera, FRAMES[6] + std::to_string(body_id), ros::Time(0), tf_right_hand);
 
 		double x_right_hand_camera = tf_right_hand.getOrigin().x();
 		double y_right_hand_camera = tf_right_hand.getOrigin().y();
@@ -246,7 +262,7 @@ int main(int argc, char** argv){
 
 		/////////////////////////// left elbow /////////////////////////
 		// torso
-		listener.lookupTransform(MAIN_FRAME, FRAMES[7]+ boost::lexical_cast<std::string>(int(last_char)-'0'), ros::Time(0), tf_left_elbow);
+		listener.lookupTransform(MAIN_FRAME, FRAMES[7] + std::to_string(body_id), ros::Time(0), tf_left_elbow);
 
  		double x_left_elbow = tf_left_elbow.getOrigin().x();
  		double y_left_elbow = tf_left_elbow.getOrigin().y();
@@ -257,7 +273,7 @@ int main(int argc, char** argv){
 		tf::Quaternion q_left_elbow = tf_left_elbow.getRotation();
 		
 		// camera
-		listener.lookupTransform(MAIN_FRAME_camera, FRAMES[7]+ boost::lexical_cast<std::string>(int(last_char)-'0'), ros::Time(0), tf_left_elbow);
+		listener.lookupTransform(MAIN_FRAME_camera, FRAMES[7] + std::to_string(body_id), ros::Time(0), tf_left_elbow);
 
  		double x_left_elbow_camera = tf_left_elbow.getOrigin().x();
  		double y_left_elbow_camera = tf_left_elbow.getOrigin().y();
@@ -269,7 +285,7 @@ int main(int argc, char** argv){
 
  		////////////////////////// right elbow //////////////////////////////
  		// torso
- 		listener.lookupTransform(MAIN_FRAME, FRAMES[8]+ boost::lexical_cast<std::string>(int(last_char)-'0'), ros::Time(0), tf_right_elbow);
+ 		listener.lookupTransform(MAIN_FRAME, FRAMES[8] + std::to_string(body_id), ros::Time(0), tf_right_elbow);
 
  		double x_right_elbow = tf_right_elbow.getOrigin().x();
  		double y_right_elbow = tf_right_elbow.getOrigin().y();
@@ -280,7 +296,7 @@ int main(int argc, char** argv){
 		tf::Quaternion q_right_elbow = tf_right_elbow.getRotation();
 		
 		// camera
- 		listener.lookupTransform(MAIN_FRAME_camera, FRAMES[8]+ boost::lexical_cast<std::string>(int(last_char)-'0'), ros::Time(0), tf_right_elbow);
+ 		listener.lookupTransform(MAIN_FRAME_camera, FRAMES[8] + std::to_string(body_id), ros::Time(0), tf_right_elbow);
 
  		double x_right_elbow_camera = tf_right_elbow.getOrigin().x();
  		double y_right_elbow_camera = tf_right_elbow.getOrigin().y();
@@ -292,7 +308,7 @@ int main(int argc, char** argv){
 
  		/////////////////////////// left hip ///////////////////////////
  		// torso
- 		listener.lookupTransform(MAIN_FRAME, FRAMES[9]+ boost::lexical_cast<std::string>(int(last_char)-'0'), ros::Time(0), tf_left_hip);
+ 		listener.lookupTransform(MAIN_FRAME, FRAMES[9] + std::to_string(body_id), ros::Time(0), tf_left_hip);
 
  		double x_left_hip = tf_left_hip.getOrigin().x();
  		double y_left_hip = tf_left_hip.getOrigin().y();
@@ -303,7 +319,7 @@ int main(int argc, char** argv){
 		tf::Quaternion q_left_hip = tf_left_hip.getRotation();
 		
 		// camera
- 		listener.lookupTransform(MAIN_FRAME_camera, FRAMES[9]+ boost::lexical_cast<std::string>(int(last_char)-'0'), ros::Time(0), tf_left_hip);
+ 		listener.lookupTransform(MAIN_FRAME_camera, FRAMES[9] + std::to_string(body_id), ros::Time(0), tf_left_hip);
 
  		double x_left_hip_camera = tf_left_hip.getOrigin().x();
  		double y_left_hip_camera = tf_left_hip.getOrigin().y();
@@ -315,7 +331,7 @@ int main(int argc, char** argv){
 
  		////////////////////////// right hip //////////////////////////////
  		// torso
- 		listener.lookupTransform(MAIN_FRAME, FRAMES[10]+ boost::lexical_cast<std::string>(int(last_char)-'0'), ros::Time(0), tf_right_hip);
+ 		listener.lookupTransform(MAIN_FRAME, FRAMES[10] + std::to_string(body_id), ros::Time(0), tf_right_hip);
 
  		double x_right_hip = tf_right_hip.getOrigin().x();
  		double y_right_hip = tf_right_hip.getOrigin().y();
@@ -326,7 +342,7 @@ int main(int argc, char** argv){
 		tf::Quaternion q_right_hip = tf_right_hip.getRotation();
 		
 		// camera
- 		listener.lookupTransform(MAIN_FRAME_camera, FRAMES[10]+ boost::lexical_cast<std::string>(int(last_char)-'0'), ros::Time(0), tf_right_hip);
+ 		listener.lookupTransform(MAIN_FRAME_camera, FRAMES[10] + std::to_string(body_id), ros::Time(0), tf_right_hip);
 
  		double x_right_hip_camera = tf_right_hip.getOrigin().x();
  		double y_right_hip_camera = tf_right_hip.getOrigin().y();
@@ -338,7 +354,7 @@ int main(int argc, char** argv){
 
  		///////////////////////////// left knee ///////////////////////////
  		// torso
- 		listener.lookupTransform(MAIN_FRAME, FRAMES[11]+ boost::lexical_cast<std::string>(int(last_char)-'0'), ros::Time(0), tf_left_knee);
+ 		listener.lookupTransform(MAIN_FRAME, FRAMES[11] + std::to_string(body_id), ros::Time(0), tf_left_knee);
 
  		double x_left_knee = tf_left_knee.getOrigin().x();
  		double y_left_knee = tf_left_knee.getOrigin().y();
@@ -349,7 +365,7 @@ int main(int argc, char** argv){
 		tf::Quaternion q_left_knee = tf_left_knee.getRotation();
 		
 		// camera
- 		listener.lookupTransform(MAIN_FRAME_camera, FRAMES[11]+ boost::lexical_cast<std::string>(int(last_char)-'0'), ros::Time(0), tf_left_knee);
+ 		listener.lookupTransform(MAIN_FRAME_camera, FRAMES[11] + std::to_string(body_id), ros::Time(0), tf_left_knee);
 
  		double x_left_knee_camera = tf_left_knee.getOrigin().x();
  		double y_left_knee_camera = tf_left_knee.getOrigin().y();
@@ -361,7 +377,7 @@ int main(int argc, char** argv){
 
  		/////////////////////////// right knee ///////////////////////////////
  		// torso
- 		listener.lookupTransform(MAIN_FRAME, FRAMES[12]+ boost::lexical_cast<std::string>(int(last_char)-'0'), ros::Time(0), tf_right_knee);
+ 		listener.lookupTransform(MAIN_FRAME, FRAMES[12] + std::to_string(body_id), ros::Time(0), tf_right_knee);
 
  		double x_right_knee = tf_right_knee.getOrigin().x();
  		double y_right_knee = tf_right_knee.getOrigin().y();
@@ -372,7 +388,7 @@ int main(int argc, char** argv){
 		tf::Quaternion q_right_knee = tf_right_knee.getRotation();
 		
 		// camera
- 		listener.lookupTransform(MAIN_FRAME_camera, FRAMES[12]+ boost::lexical_cast<std::string>(int(last_char)-'0'), ros::Time(0), tf_right_knee);
+ 		listener.lookupTransform(MAIN_FRAME_camera, FRAMES[12] + std::to_string(body_id), ros::Time(0), tf_right_knee);
 
  		double x_right_knee_camera = tf_right_knee.getOrigin().x();
  		double y_right_knee_camera = tf_right_knee.getOrigin().y();
@@ -384,7 +400,7 @@ int main(int argc, char** argv){
 
  		////////////////////// left foot //////////////////////////
  		// torso
- 		listener.lookupTransform(MAIN_FRAME, FRAMES[13]+ boost::lexical_cast<std::string>(int(last_char)-'0'), ros::Time(0), tf_left_foot);
+ 		listener.lookupTransform(MAIN_FRAME, FRAMES[13] + std::to_string(body_id), ros::Time(0), tf_left_foot);
 
  		double x_left_foot = tf_left_foot.getOrigin().x();
  		double y_left_foot = tf_left_foot.getOrigin().y();
@@ -395,7 +411,7 @@ int main(int argc, char** argv){
 		tf::Quaternion q_left_foot = tf_left_foot.getRotation();
 
         // camera
- 		listener.lookupTransform(MAIN_FRAME_camera, FRAMES[13]+ boost::lexical_cast<std::string>(int(last_char)-'0'), ros::Time(0), tf_left_foot);
+ 		listener.lookupTransform(MAIN_FRAME_camera, FRAMES[13] + std::to_string(body_id), ros::Time(0), tf_left_foot);
 
  		double x_left_foot_camera = tf_left_foot.getOrigin().x();
  		double y_left_foot_camera = tf_left_foot.getOrigin().y();
@@ -407,7 +423,7 @@ int main(int argc, char** argv){
 
  		///////////////////////////// right foot ////////////////////////
  		// torso
- 		listener.lookupTransform(MAIN_FRAME, FRAMES[14]+ boost::lexical_cast<std::string>(int(last_char)-'0'), ros::Time(0), tf_right_foot);
+ 		listener.lookupTransform(MAIN_FRAME, FRAMES[14] + std::to_string(body_id), ros::Time(0), tf_right_foot);
 
  		double x_right_foot = tf_right_foot.getOrigin().x();
  		double y_right_foot = tf_right_foot.getOrigin().y();
@@ -418,7 +434,7 @@ int main(int argc, char** argv){
 		tf::Quaternion q_right_foot = tf_right_foot.getRotation();
 		
 		// camera
- 		listener.lookupTransform(MAIN_FRAME_camera, FRAMES[14]+ boost::lexical_cast<std::string>(int(last_char)-'0'), ros::Time(0), tf_right_foot);
+ 		listener.lookupTransform(MAIN_FRAME_camera, FRAMES[14] + std::to_string(body_id), ros::Time(0), tf_right_foot);
 
  		double x_right_foot_camera = tf_right_foot.getOrigin().x();
  		double y_right_foot_camera = tf_right_foot.getOrigin().y();
